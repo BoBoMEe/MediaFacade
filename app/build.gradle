@@ -1,0 +1,83 @@
+buildscript {
+    repositories {
+        jcenter()
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'me.tatarka:gradle-retrolambda:3.2.5'
+    }
+}
+
+apply plugin: 'com.android.application'
+apply plugin: 'me.tatarka.retrolambda'
+
+def gitSha = 'git rev-parse --short HEAD'.execute([], project.rootDir).text.trim()
+def gitBranch = (System.getenv("WERCKER_GIT_BRANCH") != null) ? System.getenv("WERCKER_GIT_BRANCH") : 'git rev-parse --abbrev-ref HEAD'.execute([], project.rootDir).text.trim()
+def buildTime = new Date().format("yyyy-MM-dd'T'HH:mm'Z'", TimeZone.getTimeZone("UTC"))
+
+android {
+    compileSdkVersion rootProject.ext.compileSdkVersion
+    buildToolsVersion rootProject.ext.buildToolsVersion
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    defaultConfig {
+        applicationId "com.drivemode.media.sample"
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode 1
+        versionName "1.0"
+
+        vectorDrawables.useSupportLibrary true
+
+        buildConfigField "String", "GIT_SHA", "\"${gitSha}\""
+        buildConfigField "String", "GIT_BRANCH", "\"${gitBranch}\""
+        buildConfigField "String", "BUILD_TIME", "\"${buildTime}\""
+    }
+
+    dataBinding {
+        enabled = true
+    }
+
+    dexOptions {
+        preDexLibraries = rootProject.ext.preDexEnabled && !rootProject.ext.isCi
+        jumboMode true
+        dexInProcess true
+        javaMaxHeapSize "4g"
+    }
+
+    aaptOptions {
+        noCompress 'apk'
+    }
+
+    packagingOptions {
+        exclude 'META-INF/NOTICE.txt'
+        exclude 'META-INF/LICENSE.txt'
+        exclude 'META-INF/DEPENDENCIES'
+        exclude 'META-INF/NOTICE'
+        exclude 'META-INF/LICENSE'
+        exclude 'META-INF/services/javax.annotation.processing.Processor'
+    }
+}
+
+dependencies {
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+    compile project(':audio')
+    compile project(':image')
+    compile project(':video')
+    compile "com.android.support:support-v4:${rootProject.ext.supportLibrary}"
+    compile "com.android.support:appcompat-v7:${rootProject.ext.supportLibrary}"
+    compile "com.android.support:design:${rootProject.ext.supportLibrary}"
+    compile "com.android.support:support-vector-drawable:${rootProject.ext.supportLibrary}"
+    compile "com.android.support:animated-vector-drawable:${rootProject.ext.supportLibrary}"
+    compile 'com.github.hotchemi:permissionsdispatcher:2.1.3'
+    annotationProcessor 'com.github.hotchemi:permissionsdispatcher-processor:2.1.3'
+    compile 'com.squareup.picasso:picasso:2.3.3'
+    compile 'io.reactivex:rxandroid:1.1.0'
+    compile 'io.reactivex:rxjava:1.1.3'
+
+    testCompile "junit:junit:${rootProject.ext.junit}"
+}
